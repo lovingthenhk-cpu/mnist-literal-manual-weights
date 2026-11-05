@@ -53,7 +53,7 @@ def hole_count(im):
 
 def preprocess(X):
     # No labels are needed. Preprocess each example independently.
-    sk=[];dist=[];holes=[]
+    sk=[];dist=[];holes=[];geometry=[]
     for a in X:
         bin=(a>65)
         skel=skeletonize(bin)
@@ -61,7 +61,26 @@ def preprocess(X):
         sk.append(skel.astype(np.float32))
         dist.append(distance_transform_edt(~bin).astype(np.float32))
         holes.append(hole_count(a))
-    return np.array(sk),np.array(dist),np.array(holes,np.int32)
+        ys,xs=np.where(bin)
+        if len(ys):
+            x0,x1=xs.min(),xs.max();y0,y1=ys.min(),ys.max()
+            cx=(x0+x1)/2;cy=(y0+y1)/2
+            top=bin[y0:min(y0+6,28)]
+            bottom=bin[max(y0,y1-5):y1+1]
+            topbar=float(max((row.sum() for row in top),default=0))
+            bottombar=float(max((row.sum() for row in bottom),default=0))
+            upper=bin[y0:int(cy)+1]
+            ul=float(upper[:,:int(cx)].sum())/max(1.,float(upper.sum()))
+            lower=bin[int(cy):y1+1]
+            ll=float(lower[:,:int(cx)].sum())/max(1.,float(lower.sum()))
+            comps,_,stats,centroids=cv2.connectedComponentsWithStats(1-bin.astype(np.uint8),connectivity=8)
+            hlist=[(stats[i,4],centroids[i,1]) for i in range(1,comps)
+                if stats[i,0]>0 and stats[i,1]>0 and stats[i,0]+stats[i,2]<28 and stats[i,1]+stats[i,3]<28]
+            largest=max(hlist,key=lambda t:t[0]) if hlist else None
+            holey=float((largest[1]-y0)/max(1,y1-y0)) if largest else -1.
+            geometry.append([topbar,bottombar,ul,ll,holey,float(x1-x0)])
+        else:geometry.append([0.,0.,0.,0.,-1.,0.])
+    return np.array(sk),np.array(dist),np.array(holes,np.int32),np.array(geometry,np.float32)
 
 def compile_weights():
     templates,labels,names,penalties=make_templates()
@@ -76,7 +95,7 @@ def compile_weights():
 def predict(X,weights=None,device='auto'):
     w=weights if weights is not None else compile_weights()
     images=np.asarray(X)
-    sk,dt,holes=preprocess(images)
+    sk,dt,holes,geometry=preprocess(images)
     backend='numpy'
     if device!='cpu':
         try:
@@ -100,6 +119,7 @@ def predict(X,weights=None,device='auto'):
         b=(sks@R)/xp.maximum(sks.sum(axis=1,keepdims=True),1) * COEFFICIENTS['input_to_template']
         raw=a+b+g[None,:]*COEFFICIENTS['geometric_penalty']
         h=xp.asarray(holes[start:end])
+        geom=xp.asarray(geometry[start:end]);t,b,ul,ll,hy,ww=[geom[:,i] for i in range(6)]
         all_classes=[]; all_arg=[]
         for cls in range(10):
             indices=np.flatnonzero(labels==cls)
@@ -108,6 +128,31 @@ def predict(X,weights=None,device='auto'):
             arg=xp.argmin(cost,axis=1)
             # For class 4 the holes feature has ambiguity; explicitly prescribed penalty.
             penalty=xp.asarray(HOLE_PENALTIES[cls])[xp.minimum(h,3)]
+            # Hand-authored spatial discrimination; all weights are literal constants.
+            # 0 vs 6/9: loop vertical position; 1 vs 7: top bar.
+            if cls==0:
+                penalty+=.14*xp.maximum(8-t,0)+.11*xp.maximum(9-b,0)
+                penalty+=xp.where((hy>=0)&((hy>.64)|(hy<.40)),.70,0.)
+            elif cls==1:
+                penalty+=.14*xp.maximum(t-7,0.)
+            elif cls==2:
+                penalty+=.12*xp.maximum(10-b,0.)
+            elif cls==3:
+                penalty+=2.6*xp.maximum(ul-.43,0.)
+            elif cls==4:
+                penalty+=.17*xp.maximum(b-7,0.)
+            elif cls==5:
+                penalty+=2.2*xp.maximum(.36-ul,0.)
+            elif cls==6:
+                penalty+=.14*xp.maximum(t-8,0.)+.14*xp.maximum(8-b,0.)
+                penalty+=xp.where((hy>=0)&(hy<.60),.55,0.)
+            elif cls==7:
+                penalty+=.14*xp.maximum(9-t,0.)+.16*xp.maximum(b-8,0.)
+            elif cls==8:
+                penalty+=.18*xp.maximum(7-t,0.)+.11*xp.maximum(b-14,0.)
+            elif cls==9:
+                penalty+=.18*xp.maximum(b-6,0.)
+                penalty+=xp.where((hy>=0)&(hy>.43),.65,0.)
             all_classes.append(m+penalty+biases[cls]);all_arg.append(xp.asarray(indices)[arg])
         scores_all.append(xp.asnumpy(xp.stack(all_classes,axis=1)) if backend=='cupy' else xp.stack(all_classes,axis=1))
         argall.append(xp.asnumpy(xp.stack(all_arg,axis=1)) if backend=='cupy' else xp.stack(all_arg,axis=1))
