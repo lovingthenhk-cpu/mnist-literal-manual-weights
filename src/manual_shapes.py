@@ -104,3 +104,18 @@ ENDPOINT_TARGETS = [
  [0.,.4,.4,.5] # 9: loop and descending tail
 ]
 ENDPOINT_WEIGHTS = [.10,.23,.34,.43,.30,.42,.25,.22,.14,.23]
+
+# Human-written horizontal stroke crossing targets at relative heights 15/30/50/70/85%.
+ROW_TARGETS = [
+ [1.,2.,2.,2.,1.5],  # 0 ring
+ [1.,1.,1.,1.,1.],  # 1 single line
+ [1.4,1.4,1.,1.,1.3],  # 2 top arch, diagonal, base
+ [1.3,1.,1.,1.,1.5],  # 3 double curved lobes
+ [2.,2.,1.5,1.,1.],  # 4 upper fork and lower leg
+ [1.,1.,1.,1.2,1.3],  # 5 bar and bottom hook
+ [1.,1.,1.3,2.,1.5],  # 6 bottom loop
+ [1.3,1.2,1.,1.,1.],  # 7 top bar then diagonal
+ [1.6,1.6,1.,1.7,1.7],  # 8 waist joining two loops
+ [2.,1.8,1.2,1.,1.],  # 9 upper loop and lower tail
+]
+ROW_WEIGHTS=[.22,.07,.16,.20,.20,.14,.18,.12,.23,.18]
