@@ -103,7 +103,7 @@ ENDPOINT_TARGETS = [
  [0.,.5,0.,0.], # 8: two loops occasionally open at top
  [0.,.4,.4,.5] # 9: loop and descending tail
 ]
-ENDPOINT_WEIGHTS = [.10,.23,.34,.43,.30,.42,.25,.22,.14,.23]
+ENDPOINT_WEIGHTS = [.10,.23,.42,.53,.30,.51,.25,.22,.14,.23]
 
 # Human-written horizontal stroke crossing targets at relative heights 15/30/50/70/85%.
 ROW_TARGETS = [
