@@ -4,7 +4,7 @@ Only parameters in manual_shapes.py may change; NO learner or optimizer.
 import numpy as np, cv2
 from scipy.ndimage import distance_transform_edt, convolve
 from skimage.morphology import skeletonize
-from .manual_shapes import STROKES, GEOMETRY, COEFFICIENTS, HOLE_PENALTIES, ENDPOINT_TARGETS, ENDPOINT_WEIGHTS, ROW_TARGETS, ROW_WEIGHTS
+from .manual_shapes import STROKES, GEOMETRY, COEFFICIENTS, HOLE_PENALTIES, ENDPOINT_TARGETS, ENDPOINT_WEIGHTS, ROW_TARGETS, ROW_WEIGHTS, GEOMETRIC_TARGETS, GEOMETRIC_WEIGHTS
 
 N=28
 
@@ -113,7 +113,7 @@ def compile_weights():
     wreverse=dists.reshape(len(templates),-1)
     return dict(forward_weights=wforward,reverse_weights=wreverse,
                 labels=labels.astype(np.int8),names=np.array(names),
-                geom_penalty=penalties, endpoint_targets=np.array(ENDPOINT_TARGETS,np.float32), endpoint_weights=np.array(ENDPOINT_WEIGHTS,np.float32), class_bias=np.array(COEFFICIENTS['class_bias'],np.float32),hole_penalties=np.array(HOLE_PENALTIES,np.float32), row_targets=np.array(ROW_TARGETS,np.float32), row_weights=np.array(ROW_WEIGHTS,np.float32))
+                geom_penalty=penalties, endpoint_targets=np.array(ENDPOINT_TARGETS,np.float32), endpoint_weights=np.array(ENDPOINT_WEIGHTS,np.float32), class_bias=np.array(COEFFICIENTS['class_bias'],np.float32),hole_penalties=np.array(HOLE_PENALTIES,np.float32), row_targets=np.array(ROW_TARGETS,np.float32), row_weights=np.array(ROW_WEIGHTS,np.float32), geometric_targets=np.array(GEOMETRIC_TARGETS,np.float32), geometric_weights=np.array(GEOMETRIC_WEIGHTS,np.float32))
 
 def predict(X,weights=None,device='auto'):
     w=weights if weights is not None else compile_weights()
@@ -145,6 +145,7 @@ def predict(X,weights=None,device='auto'):
         geom=xp.asarray(geometry[start:end]);t,b,ul,ll,hy,ww,mid=[geom[:,i] for i in range(7)]
         ends=xp.asarray(endpoints[start:end])
         rows=xp.asarray(crossings[start:end])
+        gvec=xp.stack((t/14.,b/14.,ul,ll,ww/20.),axis=1)
         all_classes=[]; all_arg=[]
         for cls in range(10):
             indices=np.flatnonzero(labels==cls)
@@ -180,6 +181,7 @@ def predict(X,weights=None,device='auto'):
                 penalty+=xp.where((hy>=0)&(hy>.43),.65,0.)
             penalty+=xp.sum(xp.abs(ends-xp.asarray(w['endpoint_targets'][cls])),axis=1)*float(w['endpoint_weights'][cls])
             penalty+=xp.sum(xp.abs(rows-xp.asarray(w['row_targets'][cls])),axis=1)*float(w['row_weights'][cls])
+            penalty+=xp.sum(xp.abs(gvec-xp.asarray(w['geometric_targets'][cls])),axis=1)*float(w['geometric_weights'][cls])
             all_classes.append(m+penalty+biases[cls]);all_arg.append(xp.asarray(indices)[arg])
         scores_all.append(xp.asnumpy(xp.stack(all_classes,axis=1)) if backend=='cupy' else xp.stack(all_classes,axis=1))
         argall.append(xp.asnumpy(xp.stack(all_arg,axis=1)) if backend=='cupy' else xp.stack(all_arg,axis=1))

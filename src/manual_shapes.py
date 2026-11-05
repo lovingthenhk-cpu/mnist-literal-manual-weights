@@ -119,3 +119,20 @@ ROW_TARGETS = [
  [2.,1.8,1.2,1.,1.],  # 9 upper loop and lower tail
 ]
 ROW_WEIGHTS=[.22,.07,.16,.21,.20,.14,.18,.12,.09,.18]
+
+# Explicit numeral-shape targets chosen by handwritten digit anatomy.
+# (top bar/14, bottom bar/14, upper-left fraction, lower-left fraction, width/20)
+# These are literal model weights, not computed by a data fitting algorithm.
+GEOMETRIC_TARGETS = [
+ [.75,.90,.42,.52,.85],
+ [.26,.30,.10,.53,.36],
+ [.72,.98,.33,.48,.90],
+ [.71,.75,.26,.35,.76],
+ [.40,.28,.48,.37,.76],
+ [.84,.70,.49,.50,.84],
+ [.30,.78,.52,.48,.66],
+ [.92,.28,.33,.20,.75],
+ [.70,.65,.43,.52,.70],
+ [.68,.28,.40,.31,.60],
+]
+GEOMETRIC_WEIGHTS = [.30,.32,.37,.42,.42,.40,.35,.34,.40,.41]
