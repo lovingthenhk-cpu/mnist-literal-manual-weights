@@ -22,8 +22,8 @@ out=repo/'experiments'/a.name
 out.mkdir(parents=True,exist_ok=True)
 np.savez_compressed(out/'weights.npz',**weights)
 np.savez_compressed(out/'evaluation.npz',actual=yy,predicted=pred,score=scores,prototype_index=closest)
-from src.manual_shapes import STROKES,GEOMETRY,COEFFICIENTS,HOLE_PENALTIES,ENDPOINT_TARGETS,ENDPOINT_WEIGHTS
-meta=dict(name=a.name,mode=a.mode,samples=len(yy),accuracy=float(correct.mean()),errors=int((~correct).sum()),dataset_sha256=hashlib.sha256((repo/'data/mnist.npz').read_bytes()).hexdigest(),prototypes=int(len(weights['labels'])),weights_shapes={k:list(v.shape) for k,v in weights.items()},gpu=a.gpu,coefficients=COEFFICIENTS,hole_penalties=HOLE_PENALTIES,endpoint_targets=ENDPOINT_TARGETS,endpoint_weights=ENDPOINT_WEIGHTS,geometry=GEOMETRY,n_styles={str(k):len(v) for k,v in STROKES.items()},timestamp=datetime.datetime.now(datetime.timezone.utc).isoformat(),per_class={str(i):dict(n=int((yy==i).sum()),accuracy=float(correct[yy==i].mean())) for i in range(10)})
+from src.manual_shapes import STROKES,GEOMETRY,COEFFICIENTS,HOLE_PENALTIES,ENDPOINT_TARGETS,ENDPOINT_WEIGHTS,ROW_TARGETS,ROW_WEIGHTS
+meta=dict(name=a.name,mode=a.mode,samples=len(yy),accuracy=float(correct.mean()),errors=int((~correct).sum()),dataset_sha256=hashlib.sha256((repo/'data/mnist.npz').read_bytes()).hexdigest(),prototypes=int(len(weights['labels'])),weights_shapes={k:list(v.shape) for k,v in weights.items()},gpu=a.gpu,coefficients=COEFFICIENTS,hole_penalties=HOLE_PENALTIES,endpoint_targets=ENDPOINT_TARGETS,endpoint_weights=ENDPOINT_WEIGHTS,row_targets=ROW_TARGETS,row_weights=ROW_WEIGHTS,geometry=GEOMETRY,n_styles={str(k):len(v) for k,v in STROKES.items()},timestamp=datetime.datetime.now(datetime.timezone.utc).isoformat(),per_class={str(i):dict(n=int((yy==i).sum()),accuracy=float(correct[yy==i].mean())) for i in range(10)})
 (out/'metrics.json').write_text(json.dumps(meta,ensure_ascii=False,indent=2)+'\n')
 with open(out/'misclassified.txt','w') as f:
  for i in np.flatnonzero(~correct)[:90]:
