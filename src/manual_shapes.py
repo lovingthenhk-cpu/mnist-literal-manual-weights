@@ -63,5 +63,5 @@ STROKES = {
 GEOMETRY = dict(width=[.86,1.0,1.15], tilt=[-.15,0.0,.15], height=[.95,1.05], dy=[-.7,.7])
 # Hand-set classifier coefficients; these ARE manually specified weights/biases.
 COEFFICIENTS = dict(template_to_input=0.60, input_to_template=0.40,
-                    holes=0.80, geometric_penalty=0.08,
-                    class_bias=[0.,0.,0.,0.,0.,0.,0.,0.,0.,0.])
+                    holes=0.55, geometric_penalty=0.15,
+                    class_bias=[-.30,-.02,-.12,-.05,.65,0.,-.03,-.12,-.40,-.15])
