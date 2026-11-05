@@ -152,18 +152,18 @@ def predict(X,weights=None,device='auto'):
             elif cls==2:
                 penalty+=.16*xp.maximum(10-b,0.)+.15*xp.maximum(8-t,0.)+2.0*xp.maximum(.36-ll,0.)
             elif cls==3:
-                penalty+=5.0*xp.maximum(ul-.43,0.)+.10*xp.maximum(b-13,0.)+.20*xp.maximum(7-t,0.)+4.0*xp.maximum(ll-.43,0.)
+                penalty+=5.0*xp.maximum(ul-.43,0.)+.10*xp.maximum(b-13,0.)+.20*xp.maximum(7-t,0.)+4.0*xp.maximum(ll-.43,0.)+.23*xp.maximum(8-b,0.)+.12*xp.maximum(t-13,0.)
             elif cls==4:
-                penalty+=.17*xp.maximum(b-7,0.)+.15*xp.maximum(t-9,0.)+.20*xp.maximum(5-t,0.)+3.0*xp.maximum(.28-ul,0.)+.12*xp.maximum(8-mid,0.)+xp.where((hy>=0)&(hy<.38),.60,0.)
+                penalty+=.17*xp.maximum(b-7,0.)+.15*xp.maximum(t-9,0.)+.20*xp.maximum(5-t,0.)+3.0*xp.maximum(.28-ul,0.)+.17*xp.maximum(8-mid,0.)+xp.where((hy>=0)&(hy<.38),.60,0.)
             elif cls==5:
                 penalty+=4.5*xp.maximum(.40-ul,0.)+2.0*xp.maximum(.36-ll,0.)+.18*xp.maximum(10-t,0.)
             elif cls==6:
-                penalty+=.14*xp.maximum(t-8,0.)+.14*xp.maximum(8-b,0.)
+                penalty+=.23*xp.maximum(t-8,0.)+.14*xp.maximum(8-b,0.)
                 penalty+=xp.where((hy>=0)&(hy<.60),.55,0.)
             elif cls==7:
                 penalty+=.22*xp.maximum(11-t,0.)+.16*xp.maximum(b-8,0.)
             elif cls==8:
-                penalty+=.18*xp.maximum(7-t,0.)+.42*xp.maximum(b-11,0.)+.18*xp.maximum(ww-18,0.)
+                penalty+=.18*xp.maximum(7-t,0.)+.46*xp.maximum(b-11,0.)+.18*xp.maximum(ww-16,0.)+xp.where((hy>.43)&(hy<.61),.65,0.)
             elif cls==9:
                 penalty+=.18*xp.maximum(b-6,0.)
                 penalty+=xp.where((hy>=0)&(hy>.43),.65,0.)
