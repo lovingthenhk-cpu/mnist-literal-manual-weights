@@ -42,3 +42,10 @@
 |017|89.85%|Revised 2/6/8/9 class biases|
 |018|89.70%|Endpoint weight revision, regression retained|
 |019|90.00%|Equal-blend two literal-weight models 016 + 017|
+
+## Final one-time held-out test result (after the model freeze)
+
+- The officially held-out 10,000 images were evaluated once after freeze commit `9765f03f553f8b726a5975f14040a0122fbb339c`.
+- Held-out MNIST test accuracy: `8984/10000 = 89.84%`, not 90%.
+- This misses the user's target by 16 images. Do not alter model based on this held-out outcome.
+- Published raw predictions and all class scores in `experiments/exp019-official-test/evaluation.npz` and the compiled numerical arrays in `experiments/exp019/weights.npz`.
