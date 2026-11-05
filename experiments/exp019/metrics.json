@@ -1,0 +1,71 @@
+{
+  "name": "exp019",
+  "mode": "dev",
+  "n": 2000,
+  "correct": 1800,
+  "wrong": 200,
+  "accuracy": 0.9,
+  "model_sources": [
+    "exp016",
+    "exp017"
+  ],
+  "ensemble_coefficients": [
+    0.5,
+    0.5
+  ],
+  "data_sha256": "731c5ac602752760c8e48fbffcf8c3b850d9dc2a2aedcf2cc48468fc17b673d1",
+  "gpu": true,
+  "timestamp": "2026-11-05T01:05:28.110164+00:00",
+  "classes": {
+    "0": {
+      "count": 199,
+      "correct": 192,
+      "accuracy": 0.964824120603015
+    },
+    "1": {
+      "count": 227,
+      "correct": 220,
+      "accuracy": 0.9691629955947136
+    },
+    "2": {
+      "count": 202,
+      "correct": 173,
+      "accuracy": 0.8564356435643564
+    },
+    "3": {
+      "count": 206,
+      "correct": 173,
+      "accuracy": 0.8398058252427184
+    },
+    "4": {
+      "count": 231,
+      "correct": 207,
+      "accuracy": 0.8961038961038961
+    },
+    "5": {
+      "count": 177,
+      "correct": 151,
+      "accuracy": 0.8531073446327684
+    },
+    "6": {
+      "count": 179,
+      "correct": 158,
+      "accuracy": 0.88268156424581
+    },
+    "7": {
+      "count": 210,
+      "correct": 202,
+      "accuracy": 0.9619047619047619
+    },
+    "8": {
+      "count": 196,
+      "correct": 172,
+      "accuracy": 0.8775510204081632
+    },
+    "9": {
+      "count": 173,
+      "correct": 152,
+      "accuracy": 0.8786127167630058
+    }
+  }
+}

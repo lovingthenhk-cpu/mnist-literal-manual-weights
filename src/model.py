@@ -142,7 +142,7 @@ def predict(X,weights=None,device='auto'):
     labels=np.asarray(w['labels'])
     g=xp.asarray(w['geom_penalty'])
     scores_all=[]; argall=[]
-    biases=COEFFICIENTS['class_bias']
+    biases=np.asarray(w.get('class_bias', COEFFICIENTS['class_bias']), dtype=np.float32)
     for start in range(0,len(images),512):
         end=min(start+512,len(images))
         sks=xp.asarray(sk[start:end].reshape(-1,784),dtype=xp.float32)
