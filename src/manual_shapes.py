@@ -136,3 +136,19 @@ GEOMETRIC_TARGETS = [
  [.68,.28,.40,.31,.60],
 ]
 GEOMETRIC_WEIGHTS = [.30,.32,.37,.42,.42,.40,.35,.34,.40,.41]
+
+# Symbolic branch morphology at skeleton junctions, written as classifier weights.
+# Features: any-branch, upper-half-branch, lower-half-branch, multiple branches.
+BRANCH_TARGETS = [
+ [0.,0.,0.,0.], # 0 closed ring
+ [0.,0.,0.,0.], # 1 unbranched stroke
+ [1.,0.,1.,0.], # 2 lower horizontal base crossing
+ [1.,1.,0.,0.], # 3 junction between two bows
+ [1.,.3,.8,.3],# 4 intersecting angled/vertical stems
+ [0.,.1,0.,0.],# 5 simple open stroke
+ [1.,0.,1.,0.], # 6 lower ring cross
+ [0.,.1,0.,0.],# 7 angled stem
+ [1.,.6,.7,.6],# 8 double loop/waist
+ [1.,1.,.2,0.],# 9 upper loop
+]
+BRANCH_WEIGHTS = [.10,.22,.25,.35,.30,.18,.32,.14,.33,.30]

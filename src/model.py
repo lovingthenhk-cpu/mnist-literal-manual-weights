@@ -4,7 +4,7 @@ Only parameters in manual_shapes.py may change; NO learner or optimizer.
 import numpy as np, cv2
 from scipy.ndimage import distance_transform_edt, convolve
 from skimage.morphology import skeletonize
-from .manual_shapes import STROKES, GEOMETRY, COEFFICIENTS, HOLE_PENALTIES, ENDPOINT_TARGETS, ENDPOINT_WEIGHTS, ROW_TARGETS, ROW_WEIGHTS, GEOMETRIC_TARGETS, GEOMETRIC_WEIGHTS
+from .manual_shapes import STROKES, GEOMETRY, COEFFICIENTS, HOLE_PENALTIES, ENDPOINT_TARGETS, ENDPOINT_WEIGHTS, ROW_TARGETS, ROW_WEIGHTS, GEOMETRIC_TARGETS, GEOMETRIC_WEIGHTS, BRANCH_TARGETS, BRANCH_WEIGHTS
 
 N=28
 
@@ -53,7 +53,7 @@ def hole_count(im):
 
 def preprocess(X):
     # No labels are needed. Preprocess each example independently.
-    sk=[];dist=[];holes=[];geometry=[];endpoints=[];crossings=[]
+    sk=[];dist=[];holes=[];geometry=[];endpoints=[];crossings=[];branches=[]
     for a in X:
         bin=(a>65)
         skel=skeletonize(bin)
@@ -70,6 +70,15 @@ def preprocess(X):
             crossings.append(counts_row)
         else:crossings.append([0.,0.,0.,0.,0.])
         counts=convolve(skel.astype(np.int8),np.ones((3,3),np.int8),mode='constant')-skel.astype(np.int8)
+        bn=(skel&(counts>=3)).astype(np.uint8)
+        nb,lb,bstats,bcents=cv2.connectedComponentsWithStats(bn,connectivity=8)
+        candidates=[bcents[i] for i in range(1,nb)]
+        if candidates:
+            all_y,all_x=np.where(skel)
+            y0,y1=all_y.min(),all_y.max()
+            rel=[float((pt[1]-y0)/max(1,y1-y0)) for pt in candidates]
+            branches.append([1.,float(any(v<.5 for v in rel)),float(any(v>.5 for v in rel)),float(len(rel)>=2)])
+        else:branches.append([0.,0.,0.,0.])
         epy,epx=np.where(skel&(counts==1))
         oy,ox=np.where(skel)
         if len(ox):
@@ -103,7 +112,7 @@ def preprocess(X):
             midbar=float(max((row.sum() for row in mid),default=0))
             geometry.append([topbar,bottombar,ul,ll,holey,float(x1-x0),midbar])
         else:geometry.append([0.,0.,0.,0.,-1.,0.,0.])
-    return np.array(sk),np.array(dist),np.array(holes,np.int32),np.array(geometry,np.float32),np.array(endpoints,np.float32),np.array(crossings,np.float32)
+    return np.array(sk),np.array(dist),np.array(holes,np.int32),np.array(geometry,np.float32),np.array(endpoints,np.float32),np.array(crossings,np.float32),np.array(branches,np.float32)
 
 def compile_weights():
     templates,labels,names,penalties=make_templates()
@@ -113,12 +122,12 @@ def compile_weights():
     wreverse=dists.reshape(len(templates),-1)
     return dict(forward_weights=wforward,reverse_weights=wreverse,
                 labels=labels.astype(np.int8),names=np.array(names),
-                geom_penalty=penalties, endpoint_targets=np.array(ENDPOINT_TARGETS,np.float32), endpoint_weights=np.array(ENDPOINT_WEIGHTS,np.float32), class_bias=np.array(COEFFICIENTS['class_bias'],np.float32),hole_penalties=np.array(HOLE_PENALTIES,np.float32), row_targets=np.array(ROW_TARGETS,np.float32), row_weights=np.array(ROW_WEIGHTS,np.float32), geometric_targets=np.array(GEOMETRIC_TARGETS,np.float32), geometric_weights=np.array(GEOMETRIC_WEIGHTS,np.float32))
+                geom_penalty=penalties, endpoint_targets=np.array(ENDPOINT_TARGETS,np.float32), endpoint_weights=np.array(ENDPOINT_WEIGHTS,np.float32), class_bias=np.array(COEFFICIENTS['class_bias'],np.float32),hole_penalties=np.array(HOLE_PENALTIES,np.float32), row_targets=np.array(ROW_TARGETS,np.float32), row_weights=np.array(ROW_WEIGHTS,np.float32), geometric_targets=np.array(GEOMETRIC_TARGETS,np.float32), geometric_weights=np.array(GEOMETRIC_WEIGHTS,np.float32), branch_targets=np.array(BRANCH_TARGETS,np.float32), branch_weights=np.array(BRANCH_WEIGHTS,np.float32))
 
 def predict(X,weights=None,device='auto'):
     w=weights if weights is not None else compile_weights()
     images=np.asarray(X)
-    sk,dt,holes,geometry,endpoints,crossings=preprocess(images)
+    sk,dt,holes,geometry,endpoints,crossings,branches=preprocess(images)
     backend='numpy'
     if device!='cpu':
         try:
@@ -145,6 +154,7 @@ def predict(X,weights=None,device='auto'):
         geom=xp.asarray(geometry[start:end]);t,b,ul,ll,hy,ww,mid=[geom[:,i] for i in range(7)]
         ends=xp.asarray(endpoints[start:end])
         rows=xp.asarray(crossings[start:end])
+        bn=xp.asarray(branches[start:end])
         gvec=xp.stack((t/14.,b/14.,ul,ll,ww/20.),axis=1)
         all_classes=[]; all_arg=[]
         for cls in range(10):
@@ -182,6 +192,7 @@ def predict(X,weights=None,device='auto'):
             penalty+=xp.sum(xp.abs(ends-xp.asarray(w['endpoint_targets'][cls])),axis=1)*float(w['endpoint_weights'][cls])
             penalty+=xp.sum(xp.abs(rows-xp.asarray(w['row_targets'][cls])),axis=1)*float(w['row_weights'][cls])
             penalty+=xp.sum(xp.abs(gvec-xp.asarray(w['geometric_targets'][cls])),axis=1)*float(w['geometric_weights'][cls])
+            penalty+=xp.sum(xp.abs(bn-xp.asarray(w['branch_targets'][cls])),axis=1)*float(w['branch_weights'][cls])
             all_classes.append(m+penalty+biases[cls]);all_arg.append(xp.asarray(indices)[arg])
         scores_all.append(xp.asnumpy(xp.stack(all_classes,axis=1)) if backend=='cupy' else xp.stack(all_classes,axis=1))
         argall.append(xp.asnumpy(xp.stack(all_arg,axis=1)) if backend=='cupy' else xp.stack(all_arg,axis=1))
