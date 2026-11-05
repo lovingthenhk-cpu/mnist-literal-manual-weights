@@ -1,0 +1,71 @@
+{
+  "name": "exp019-official-test",
+  "mode": "test",
+  "n": 10000,
+  "correct": 8984,
+  "wrong": 1016,
+  "accuracy": 0.8984,
+  "model_sources": [
+    "exp016",
+    "exp017"
+  ],
+  "ensemble_coefficients": [
+    0.5,
+    0.5
+  ],
+  "data_sha256": "731c5ac602752760c8e48fbffcf8c3b850d9dc2a2aedcf2cc48468fc17b673d1",
+  "gpu": true,
+  "timestamp": "2026-11-05T01:06:31.395093+00:00",
+  "classes": {
+    "0": {
+      "count": 980,
+      "correct": 964,
+      "accuracy": 0.9836734693877551
+    },
+    "1": {
+      "count": 1135,
+      "correct": 1108,
+      "accuracy": 0.9762114537444934
+    },
+    "2": {
+      "count": 1032,
+      "correct": 885,
+      "accuracy": 0.8575581395348837
+    },
+    "3": {
+      "count": 1010,
+      "correct": 879,
+      "accuracy": 0.8702970297029703
+    },
+    "4": {
+      "count": 982,
+      "correct": 875,
+      "accuracy": 0.8910386965376782
+    },
+    "5": {
+      "count": 892,
+      "correct": 806,
+      "accuracy": 0.9035874439461884
+    },
+    "6": {
+      "count": 958,
+      "correct": 845,
+      "accuracy": 0.8820459290187892
+    },
+    "7": {
+      "count": 1028,
+      "correct": 942,
+      "accuracy": 0.9163424124513618
+    },
+    "8": {
+      "count": 974,
+      "correct": 832,
+      "accuracy": 0.8542094455852156
+    },
+    "9": {
+      "count": 1009,
+      "correct": 848,
+      "accuracy": 0.8404360753221011
+    }
+  }
+}
