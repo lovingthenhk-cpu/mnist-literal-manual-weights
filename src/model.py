@@ -4,7 +4,7 @@ Only parameters in manual_shapes.py may change; NO learner or optimizer.
 import numpy as np, cv2
 from scipy.ndimage import distance_transform_edt
 from skimage.morphology import skeletonize
-from .manual_shapes import STROKES, GEOMETRY, COEFFICIENTS
+from .manual_shapes import STROKES, GEOMETRY, COEFFICIENTS, HOLE_PENALTIES
 
 N=28
 
@@ -107,8 +107,7 @@ def predict(X,weights=None,device='auto'):
             m=xp.min(cost,axis=1)
             arg=xp.argmin(cost,axis=1)
             # For class 4 the holes feature has ambiguity; explicitly prescribed penalty.
-            allowed={0:(1,),1:(0,),2:(0,1),3:(0,),4:(0,1),5:(0,),6:(0,1),7:(0,),8:(1,2),9:(0,1,)}
-            penalty=xp.min(xp.stack([xp.abs(h-a) for a in allowed[cls]],axis=1),axis=1)*COEFFICIENTS['holes']
+            penalty=xp.asarray(HOLE_PENALTIES[cls])[xp.minimum(h,3)]
             all_classes.append(m+penalty+biases[cls]);all_arg.append(xp.asarray(indices)[arg])
         scores_all.append(xp.asnumpy(xp.stack(all_classes,axis=1)) if backend=='cupy' else xp.stack(all_classes,axis=1))
         argall.append(xp.asnumpy(xp.stack(all_arg,axis=1)) if backend=='cupy' else xp.stack(all_arg,axis=1))

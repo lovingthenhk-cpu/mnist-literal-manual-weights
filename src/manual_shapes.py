@@ -65,4 +65,19 @@ GEOMETRY = dict(width=[.72,.92,1.12,1.32], tilt=[-.25,0.0,.25],
 # Hand-set classifier coefficients; these ARE manually specified weights/biases.
 COEFFICIENTS = dict(template_to_input=0.60, input_to_template=0.40,
                     holes=0.65, geometric_penalty=0.14,
-                    class_bias=[-.30,0.,-.20,-.05,.30,0.,-.08,-.18,-.35,-.08])
+                    class_bias=[-.30,-.05,-.15,-.04,.04,-.10,-.08,-.10,-.18,-.08])
+
+# Per-class penalties for observed hole count 0,1,2,>=3.
+# Written explicitly by the assistant after inspecting confusion / glyph anatomy.
+HOLE_PENALTIES = [
+ [.90,0.,.70,1.40],  # 0 closed oval
+ [0.,1.20,1.40,1.60], # 1 single stroke
+ [0.,.10,.90,1.30],  # 2 occasional enclosed top
+ [0.,.75,.95,1.35],  # 3 no enclosed loop
+ [0.,.15,.85,1.10],  # 4 open or triangle
+ [0.,.90,1.10,1.30], # 5 normally open
+ [.62,0.,.80,1.30],  # 6 bottom loop, occasionally open
+ [0.,1.10,1.40,1.60], # 7 no loop
+ [1.,.15,0.,.70],    # 8 double loop often one broken
+ [.65,0.,.90,1.30],  # 9 top loop, sometimes open
+]
