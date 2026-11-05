@@ -27,18 +27,19 @@ def make_templates():
                 for tilt in GEOMETRY['tilt']:
                     for sy in GEOMETRY['height']:
                         for dy in GEOMETRY['dy']:
-                            img=np.zeros((N,N),np.uint8)
-                            for smooth,points in subpaths:
-                                pts=catmull(points) if smooth else np.array(points,dtype=np.float32)
-                                x=14+(pts[:,0]-.5)*19*sx+tilt*(pts[:,1]-.5)*20
-                                y=14+(pts[:,1]-.5)*23*sy+dy
-                                q=np.rint(np.stack([x,y],-1)*8).astype(np.int32)
-                                cv2.polylines(img,[q],False,255,thickness=2,lineType=cv2.LINE_AA,shift=3)
-                            center=skeletonize(img>90).astype(np.float32)
-                            if center.sum()<5:continue
-                            labels.append(digit);shapes.append(center)
-                            names.append(f'{digit}:style{k}:w{sx}:sl{tilt}:h{sy}:dy{dy}')
-                            penalties.append(abs(sx-1)+abs(tilt)+abs(sy-1)+abs(dy)/15)
+                            for dx in GEOMETRY['dx']:
+                                img=np.zeros((N,N),np.uint8)
+                                for smooth,points in subpaths:
+                                    pts=catmull(points) if smooth else np.array(points,dtype=np.float32)
+                                    x=14+(pts[:,0]-.5)*19*sx+tilt*(pts[:,1]-.5)*20+dx
+                                    y=14+(pts[:,1]-.5)*23*sy+dy
+                                    q=np.rint(np.stack([x,y],-1)*8).astype(np.int32)
+                                    cv2.polylines(img,[q],False,255,thickness=2,lineType=cv2.LINE_AA,shift=3)
+                                center=skeletonize(img>90).astype(np.float32)
+                                if center.sum()<5:continue
+                                labels.append(digit);shapes.append(center)
+                                names.append(f'{digit}:style{k}:w{sx}:sl{tilt}:h{sy}:dy{dy}:dx{dx}')
+                                penalties.append(abs(sx-1)+abs(tilt)+abs(sy-1)+abs(dy)/15+abs(dx)/15)
     return np.array(shapes,dtype=np.float32),np.array(labels),names,np.array(penalties,np.float32)
 
 def hole_count(im):
@@ -106,9 +107,8 @@ def predict(X,weights=None,device='auto'):
             m=xp.min(cost,axis=1)
             arg=xp.argmin(cost,axis=1)
             # For class 4 the holes feature has ambiguity; explicitly prescribed penalty.
-            expected=2 if cls==8 else (1 if cls in (0,6,9) else 0)
-            penalty=xp.minimum(xp.abs(h-expected),2)*COEFFICIENTS['holes']
-            if cls==4:penalty=xp.minimum(xp.abs(h-0),xp.abs(h-1))*COEFFICIENTS['holes']
+            allowed={0:(1,),1:(0,),2:(0,1),3:(0,),4:(0,1),5:(0,),6:(0,1),7:(0,),8:(1,2),9:(0,1,)}
+            penalty=xp.min(xp.stack([xp.abs(h-a) for a in allowed[cls]],axis=1),axis=1)*COEFFICIENTS['holes']
             all_classes.append(m+penalty+biases[cls]);all_arg.append(xp.asarray(indices)[arg])
         scores_all.append(xp.asnumpy(xp.stack(all_classes,axis=1)) if backend=='cupy' else xp.stack(all_classes,axis=1))
         argall.append(xp.asnumpy(xp.stack(all_arg,axis=1)) if backend=='cupy' else xp.stack(all_arg,axis=1))

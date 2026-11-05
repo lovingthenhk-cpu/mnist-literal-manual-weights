@@ -60,8 +60,9 @@ STROKES = {
 }
 
 # Authored alignment/transformation coefficients, never estimated from MNIST.
-GEOMETRY = dict(width=[.86,1.0,1.15], tilt=[-.15,0.0,.15], height=[.95,1.05], dy=[-.7,.7])
+GEOMETRY = dict(width=[.72,.92,1.12,1.32], tilt=[-.25,0.0,.25],
+                height=[.90,1.06], dy=[-1.5,0.,1.5], dx=[-1.5,0.,1.5])
 # Hand-set classifier coefficients; these ARE manually specified weights/biases.
 COEFFICIENTS = dict(template_to_input=0.60, input_to_template=0.40,
-                    holes=0.55, geometric_penalty=0.15,
-                    class_bias=[-.30,-.02,-.12,-.05,.65,0.,-.03,-.12,-.40,-.15])
+                    holes=0.65, geometric_penalty=0.14,
+                    class_bias=[-.30,0.,-.20,-.05,.30,0.,-.08,-.18,-.35,-.08])
