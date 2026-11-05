@@ -78,8 +78,10 @@ def preprocess(X):
                 if stats[i,0]>0 and stats[i,1]>0 and stats[i,0]+stats[i,2]<28 and stats[i,1]+stats[i,3]<28]
             largest=max(hlist,key=lambda t:t[0]) if hlist else None
             holey=float((largest[1]-y0)/max(1,y1-y0)) if largest else -1.
-            geometry.append([topbar,bottombar,ul,ll,holey,float(x1-x0)])
-        else:geometry.append([0.,0.,0.,0.,-1.,0.])
+            mid=bin[int(y0+.43*(y1-y0)):min(28,int(y0+.72*(y1-y0))+1)]
+            midbar=float(max((row.sum() for row in mid),default=0))
+            geometry.append([topbar,bottombar,ul,ll,holey,float(x1-x0),midbar])
+        else:geometry.append([0.,0.,0.,0.,-1.,0.,0.])
     return np.array(sk),np.array(dist),np.array(holes,np.int32),np.array(geometry,np.float32)
 
 def compile_weights():
@@ -119,7 +121,7 @@ def predict(X,weights=None,device='auto'):
         b=(sks@R)/xp.maximum(sks.sum(axis=1,keepdims=True),1) * COEFFICIENTS['input_to_template']
         raw=a+b+g[None,:]*COEFFICIENTS['geometric_penalty']
         h=xp.asarray(holes[start:end])
-        geom=xp.asarray(geometry[start:end]);t,b,ul,ll,hy,ww=[geom[:,i] for i in range(6)]
+        geom=xp.asarray(geometry[start:end]);t,b,ul,ll,hy,ww,mid=[geom[:,i] for i in range(7)]
         all_classes=[]; all_arg=[]
         for cls in range(10):
             indices=np.flatnonzero(labels==cls)
@@ -134,22 +136,22 @@ def predict(X,weights=None,device='auto'):
                 penalty+=.14*xp.maximum(8-t,0)+.11*xp.maximum(9-b,0)
                 penalty+=xp.where((hy>=0)&((hy>.64)|(hy<.40)),.70,0.)
             elif cls==1:
-                penalty+=.14*xp.maximum(t-7,0.)+.20*xp.maximum(b-7,0.)+2.0*xp.maximum(ul-.27,0.)
+                penalty+=.26*xp.maximum(t-7,0.)+.20*xp.maximum(b-7,0.)+2.0*xp.maximum(ul-.27,0.)
             elif cls==2:
-                penalty+=.18*xp.maximum(10-b,0.)
+                penalty+=.18*xp.maximum(10-b,0.)+.15*xp.maximum(8-t,0.)+2.0*xp.maximum(.36-ll,0.)
             elif cls==3:
-                penalty+=2.6*xp.maximum(ul-.43,0.)+.10*xp.maximum(b-13,0.)
+                penalty+=4.2*xp.maximum(ul-.43,0.)+.10*xp.maximum(b-13,0.)+.20*xp.maximum(7-t,0.)+3.0*xp.maximum(ll-.43,0.)
             elif cls==4:
-                penalty+=.17*xp.maximum(b-7,0.)+.15*xp.maximum(t-9,0.)+xp.where((hy>=0)&(hy<.38),.60,0.)
+                penalty+=.17*xp.maximum(b-7,0.)+.15*xp.maximum(t-9,0.)+.20*xp.maximum(5-t,0.)+3.0*xp.maximum(.28-ul,0.)+.12*xp.maximum(8-mid,0.)+xp.where((hy>=0)&(hy<.38),.60,0.)
             elif cls==5:
-                penalty+=4.5*xp.maximum(.35-ul,0.)+.13*xp.maximum(9-t,0.)
+                penalty+=5.5*xp.maximum(.43-ul,0.)+3.0*xp.maximum(.40-ll,0.)+.18*xp.maximum(10-t,0.)
             elif cls==6:
                 penalty+=.14*xp.maximum(t-8,0.)+.14*xp.maximum(8-b,0.)
                 penalty+=xp.where((hy>=0)&(hy<.60),.55,0.)
             elif cls==7:
                 penalty+=.22*xp.maximum(11-t,0.)+.16*xp.maximum(b-8,0.)
             elif cls==8:
-                penalty+=.18*xp.maximum(7-t,0.)+.26*xp.maximum(b-12,0.)
+                penalty+=.18*xp.maximum(7-t,0.)+.42*xp.maximum(b-11,0.)
             elif cls==9:
                 penalty+=.18*xp.maximum(b-6,0.)
                 penalty+=xp.where((hy>=0)&(hy>.43),.65,0.)
