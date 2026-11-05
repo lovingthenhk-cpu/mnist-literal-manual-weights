@@ -87,3 +87,20 @@ HOLE_PENALTIES = [
  [1.,.15,0.,.70],    # 8 double loop often one broken
  [.65,0.,.90,1.30],  # 9 top loop, sometimes open
 ]
+
+# Human-written, integer/fractional endpoint targets. Order: TL, TR, BL, BR.
+# These geometric endpoint weights are not estimated by an optimizer or copied
+# from MNIST exemplars. They are literal model parameters chosen by inspection.
+ENDPOINT_TARGETS = [
+ [0.,0.,0.,0.],  # 0: closed ring
+ [0.,1.,.8,.2], # 1: top head & bottom
+ [1.,0.,.4,1.], # 2: upper-left start, lower-right finish
+ [1.,0.,1.,0.], # 3: both ends on left
+ [1.,1.,.5,.5], # 4: two upper tips and lower leg
+ [0.,1.,1.,0.], # 5: upper-right and lower-left
+ [0.,1.,0.,0.], # 6: upper-right tip
+ [1.,.3,.5,.5],# 7: left top and slanted down endpoint
+ [0.,.5,0.,0.], # 8: two loops occasionally open at top
+ [0.,.4,.4,.5] # 9: loop and descending tail
+]
+ENDPOINT_WEIGHTS = [.10,.23,.34,.43,.30,.42,.25,.22,.14,.23]

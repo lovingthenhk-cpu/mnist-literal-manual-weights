@@ -2,9 +2,9 @@
 Only parameters in manual_shapes.py may change; NO learner or optimizer.
 """
 import numpy as np, cv2
-from scipy.ndimage import distance_transform_edt
+from scipy.ndimage import distance_transform_edt, convolve
 from skimage.morphology import skeletonize
-from .manual_shapes import STROKES, GEOMETRY, COEFFICIENTS, HOLE_PENALTIES
+from .manual_shapes import STROKES, GEOMETRY, COEFFICIENTS, HOLE_PENALTIES, ENDPOINT_TARGETS, ENDPOINT_WEIGHTS
 
 N=28
 
@@ -53,12 +53,23 @@ def hole_count(im):
 
 def preprocess(X):
     # No labels are needed. Preprocess each example independently.
-    sk=[];dist=[];holes=[];geometry=[]
+    sk=[];dist=[];holes=[];geometry=[];endpoints=[]
     for a in X:
         bin=(a>65)
         skel=skeletonize(bin)
         if skel.sum()==0:skel=bin
         sk.append(skel.astype(np.float32))
+        counts=convolve(skel.astype(np.int8),np.ones((3,3),np.int8),mode='constant')-skel.astype(np.int8)
+        epy,epx=np.where(skel&(counts==1))
+        oy,ox=np.where(skel)
+        if len(ox):
+            ux=(epx-ox.min())/max(1,ox.max()-ox.min())
+            uy=(epy-oy.min())/max(1,oy.max()-oy.min())
+            endpoints.append([float(((uy<.4)&(ux<.45)).sum()),
+                              float(((uy<.4)&(ux>.55)).sum()),
+                              float(((uy>.6)&(ux<.45)).sum()),
+                              float(((uy>.6)&(ux>.55)).sum())])
+        else:endpoints.append([0.,0.,0.,0.])
         dist.append(distance_transform_edt(~bin).astype(np.float32))
         holes.append(hole_count(a))
         ys,xs=np.where(bin)
@@ -82,7 +93,7 @@ def preprocess(X):
             midbar=float(max((row.sum() for row in mid),default=0))
             geometry.append([topbar,bottombar,ul,ll,holey,float(x1-x0),midbar])
         else:geometry.append([0.,0.,0.,0.,-1.,0.,0.])
-    return np.array(sk),np.array(dist),np.array(holes,np.int32),np.array(geometry,np.float32)
+    return np.array(sk),np.array(dist),np.array(holes,np.int32),np.array(geometry,np.float32),np.array(endpoints,np.float32)
 
 def compile_weights():
     templates,labels,names,penalties=make_templates()
@@ -92,12 +103,12 @@ def compile_weights():
     wreverse=dists.reshape(len(templates),-1)
     return dict(forward_weights=wforward,reverse_weights=wreverse,
                 labels=labels.astype(np.int8),names=np.array(names),
-                geom_penalty=penalties)
+                geom_penalty=penalties, endpoint_targets=np.array(ENDPOINT_TARGETS,np.float32), endpoint_weights=np.array(ENDPOINT_WEIGHTS,np.float32), class_bias=np.array(COEFFICIENTS['class_bias'],np.float32),hole_penalties=np.array(HOLE_PENALTIES,np.float32))
 
 def predict(X,weights=None,device='auto'):
     w=weights if weights is not None else compile_weights()
     images=np.asarray(X)
-    sk,dt,holes,geometry=preprocess(images)
+    sk,dt,holes,geometry,endpoints=preprocess(images)
     backend='numpy'
     if device!='cpu':
         try:
@@ -122,6 +133,7 @@ def predict(X,weights=None,device='auto'):
         raw=a+b+g[None,:]*COEFFICIENTS['geometric_penalty']
         h=xp.asarray(holes[start:end])
         geom=xp.asarray(geometry[start:end]);t,b,ul,ll,hy,ww,mid=[geom[:,i] for i in range(7)]
+        ends=xp.asarray(endpoints[start:end])
         all_classes=[]; all_arg=[]
         for cls in range(10):
             indices=np.flatnonzero(labels==cls)
@@ -138,7 +150,7 @@ def predict(X,weights=None,device='auto'):
             elif cls==1:
                 penalty+=.26*xp.maximum(t-7,0.)+.20*xp.maximum(b-7,0.)+2.0*xp.maximum(ul-.27,0.)
             elif cls==2:
-                penalty+=.22*xp.maximum(12-b,0.)+.15*xp.maximum(8-t,0.)+5.0*xp.maximum(.43-ll,0.)
+                penalty+=.16*xp.maximum(10-b,0.)+.15*xp.maximum(8-t,0.)+2.0*xp.maximum(.36-ll,0.)
             elif cls==3:
                 penalty+=5.0*xp.maximum(ul-.43,0.)+.10*xp.maximum(b-13,0.)+.20*xp.maximum(7-t,0.)+4.0*xp.maximum(ll-.43,0.)
             elif cls==4:
@@ -155,6 +167,7 @@ def predict(X,weights=None,device='auto'):
             elif cls==9:
                 penalty+=.18*xp.maximum(b-6,0.)
                 penalty+=xp.where((hy>=0)&(hy>.43),.65,0.)
+            penalty+=xp.sum(xp.abs(ends-xp.asarray(w['endpoint_targets'][cls])),axis=1)*float(w['endpoint_weights'][cls])
             all_classes.append(m+penalty+biases[cls]);all_arg.append(xp.asarray(indices)[arg])
         scores_all.append(xp.asnumpy(xp.stack(all_classes,axis=1)) if backend=='cupy' else xp.stack(all_classes,axis=1))
         argall.append(xp.asnumpy(xp.stack(all_arg,axis=1)) if backend=='cupy' else xp.stack(all_arg,axis=1))
