@@ -71,7 +71,7 @@ GEOMETRY = dict(width=[.72,.92,1.12,1.32], tilt=[-.25,0.0,.25],
 # Hand-set classifier coefficients; these ARE manually specified weights/biases.
 COEFFICIENTS = dict(template_to_input=0.60, input_to_template=0.40,
                     holes=0.65, geometric_penalty=0.14,
-                    class_bias=[-.13,.07,-.15,-.22,-.16,-.17,.07,-.10,-.25,-.23])
+                    class_bias=[-.13,.07,-.15,-.29,-.16,-.20,.07,-.10,-.35,-.27])
 
 # Per-class penalties for observed hole count 0,1,2,>=3.
 # Written explicitly by the assistant after inspecting confusion / glyph anatomy.
@@ -118,4 +118,4 @@ ROW_TARGETS = [
  [1.6,1.6,1.,1.7,1.7],  # 8 waist joining two loops
  [2.,1.8,1.2,1.,1.],  # 9 upper loop and lower tail
 ]
-ROW_WEIGHTS=[.22,.07,.16,.20,.20,.14,.18,.12,.23,.18]
+ROW_WEIGHTS=[.22,.07,.16,.21,.20,.14,.18,.12,.09,.18]
